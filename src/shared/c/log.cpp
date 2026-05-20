@@ -671,7 +671,7 @@ void LogStackTrace(Log *log) {
     if (!log) {
         return;
     }
-#if !defined(ANDROID)
+#if !defined(ANDROID) && !SYSTEM_WIIU
     void *buffer[100];
     int n = backtrace(buffer, sizeof buffer / sizeof buffer[0]);
 
@@ -700,7 +700,7 @@ void LogStackTrace(Log *log) {
     free(symbols);
     symbols = NULL;
 #else
-    log->f("Stack trace not supported on Android");
+    log->f("Stack trace not supported on this platform\n");
 #endif
 }
 

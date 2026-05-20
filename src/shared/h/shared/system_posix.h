@@ -15,7 +15,7 @@ extern "C" {
  * system_windows.h, and it's certainly convenient. */
 #include <signal.h>
 #include <unistd.h>
-#if !defined(ANDROID)
+#if !defined(ANDROID) && !SYSTEM_WIIU
 #include <execinfo.h>
 #endif
 //////////////////////////////////////////////////////////////////////////

@@ -38,6 +38,11 @@ extern "C" void __nop(void);
 #define SYSTEM_LINUX 1
 #define SYSTEM_POSIX 1
 
+#elif defined __PPC__
+
+#define SYSTEM_WIIU 1
+#define SYSTEM_POSIX 1
+
 #else
 
 #error Unknown platform.
@@ -58,6 +63,10 @@ extern "C" void __nop(void);
 
 #ifndef SYSTEM_OSX
 #define SYSTEM_OSX 0
+#endif
+
+#ifndef SYSTEM_WIIU
+#define SYSTEM_WIIU 0
 #endif
 
 //////////////////////////////////////////////////////////////////////////
@@ -288,9 +297,18 @@ int vasprintf(char **buf, const char *fmt, va_list v);
 // BSD extension.
 //
 // See https://lwn.net/Articles/612244/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dest, const char *src, size_t size);
 #endif // HAVE_STRLCPY
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
 //////////////////////////////////////////////////////////////////////////

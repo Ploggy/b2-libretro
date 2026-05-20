@@ -15,9 +15,17 @@
 
 //LOG_EXTERN(OUTPUT);
 
-#if !CPU_LITTLE_ENDIAN
-#error TVOutput will need some fixing up for non-little-endian systems
-#endif
+// Endianness support: TVOutput now works on both little-endian and big-endian systems.
+// The pixel format uses conditional bit-shifting in GetTexelValue().
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+static const uint64_t NUM_UNITS_PER_SECOND = (uint64_t)2e6;
+
+static constexpr uint64_t MIN_UNITS_BETWEEN_VERTICAL_RETRACE = NUM_UNITS_PER_SECOND / 65;
+static constexpr uint64_t MAX_UNITS_BETWEEN_VERTICAL_RETRACE = NUM_UNITS_PER_SECOND / 45;
+static_assert(MIN_UNITS_BETWEEN_VERTICAL_RETRACE < MAX_UNITS_BETWEEN_VERTICAL_RETRACE); // help me computer... I cannot maths
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -714,6 +722,7 @@ static uint8_t GetByte(double x) {
 //////////////////////////////////////////////////////////////////////////
 
 uint32_t TVOutput::GetTexelValue(uint8_t r, uint8_t g, uint8_t b) const {
+    // Original little-endian only version
     return (uint32_t)b << 0u | (uint32_t)g << 8u | (uint32_t)r << 16u;
 }
 

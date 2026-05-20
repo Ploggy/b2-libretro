@@ -20,9 +20,11 @@
 union ProfilerColour {
     struct {
 #if CPU_LITTLE_ENDIAN
+        // Little-endian: memory layout is [B, G, R, A]
         uint8_t b, g, r, a;
 #else
-#error Untested...
+        // Big-endian: memory layout is [A, R, G, B]
+        uint8_t a, r, g, b;
 #endif
     } rgba;
     uint32_t value;

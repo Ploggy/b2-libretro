@@ -71,6 +71,13 @@ SOURCES_CPP += \
 	$(CORE_DIR)/shared/c/system_posix.cpp \
 	$(CORE_DIR)/shared/c/path_posix.cpp \
 
+else ifeq ($(platform), wiiu)
+SOURCES_CPP += \
+	$(CORE_DIR)/shared/c/system_wiiu.cpp \
+	$(CORE_DIR)/shared/c/system_posix_wiiu.cpp \
+	$(CORE_DIR)/shared/c/path_posix.cpp \
+	$(CORE_DIR)/shared/c/atomic_wiiu.cpp \
+
 else ifneq (,$(findstring win,$(platform)))
 SOURCES_CPP += \
 	$(CORE_DIR)/shared/c/system_windows.cpp \
