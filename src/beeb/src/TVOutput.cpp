@@ -200,7 +200,7 @@ void TVOutput::Update(const VideoDataUnit *units, size_t num_units) {
 
 #define EXPAND_16MHZ(I)                                 \
     const VideoDataPixel p##I = unit->pixels.pixels[I]; \
-    pixels1[I] = pixels0[I] = (uint32_t)p##I.bits.b << 0u | (uint32_t)p##I.bits.b << 4u | (uint32_t)p##I.bits.g << 8u | (uint32_t)p##I.bits.g << 12u | (uint32_t)p##I.bits.r << 16u | (uint32_t)p##I.bits.r << 20u
+    pixels1[I] = pixels0[I] = (uint32_t)p##I.bits.b << 0u | (uint32_t)p##I.bits.b << 4u | (uint32_t)p##I.bits.g << 8u | (uint32_t)p##I.bits.g << 12u | (uint32_t)p##I.bits.r << 16u | (uint32_t)p##I.bits.r << 20u;
 
                             EXPAND_16MHZ(0);
                             EXPAND_16MHZ(1);
@@ -722,8 +722,13 @@ static uint8_t GetByte(double x) {
 //////////////////////////////////////////////////////////////////////////
 
 uint32_t TVOutput::GetTexelValue(uint8_t r, uint8_t g, uint8_t b) const {
-    // Original little-endian only version
+#if CPU_LITTLE_ENDIAN
+    // Little-endian: store as BGRA (in memory: B, G, R, X)
     return (uint32_t)b << 0u | (uint32_t)g << 8u | (uint32_t)r << 16u;
+#else
+    // Big-endian: store as XRGB (in memory: X, R, G, B)
+    return (uint32_t)r << 24u | (uint32_t)g << 16u | (uint32_t)b << 8u;
+#endif
 }
 
 void TVOutput::InitPalette() {
