@@ -36,24 +36,12 @@ class WD1770Handler {
     WD1770Handler(WD1770Handler &&) = delete;
     WD1770Handler &operator=(WD1770Handler &&) = delete;
 
-    // Return true if the drive is at track 0.
     virtual bool IsTrack0() = 0;
-
-    // Step out (towards track 0).
     virtual void StepOut(int step_rate_ms) = 0;
-
-    // Step in (towards track N).
     virtual void StepIn(int step_rate_ms) = 0;
-
-    // Spin the drive up. The motor is assumed to switch on.
     virtual void SpinUp() = 0;
-
-    // Spin the drive down. The motor is assumed to switch off.
     virtual void SpinDown() = 0;
-
     virtual bool IsWriteProtected() = 0;
-
-    // These always operate on the current track.
     virtual bool GetByte(uint8_t *value, uint8_t sector, size_t offset) = 0;
     virtual bool SetByte(uint8_t track, size_t offset, uint8_t value) = 0;
     virtual bool GetSectorDetails(uint8_t *track, uint8_t *side, size_t *size, uint8_t sector, bool double_density) = 0;
@@ -72,10 +60,26 @@ class WD1770Handler {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. All bitfield structs below have their field order
+// reversed under CPU_BIG_ENDIAN so that named fields map to the correct
+// hardware register bit positions on both platforms.
+// Hardware bit layout: bit 0 = LSB, bit 7 = MSB of the uint8_t value.
+
 struct WD1770 {
   public:
 #include <shared/pushwarn_bitfields.h>
     struct StatusBits {
+#if CPU_BIG_ENDIAN
+        uint8_t motor_on : 1;
+        uint8_t write_protect : 1;
+        uint8_t deleted_or_spinup : 1;
+        uint8_t rnf : 1;
+        uint8_t crc_error : 1;
+        uint8_t lost_or_track0 : 1;
+        uint8_t drq_or_idx : 1;
+        uint8_t busy : 1;
+#else
         uint8_t busy : 1;
         uint8_t drq_or_idx : 1;
         uint8_t lost_or_track0 : 1;
@@ -84,6 +88,7 @@ struct WD1770 {
         uint8_t deleted_or_spinup : 1;
         uint8_t write_protect : 1;
         uint8_t motor_on : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -94,31 +99,51 @@ struct WD1770 {
 
 #include <shared/pushwarn_bitfields.h>
     struct CommandTypeIBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cmd : 4, h : 1, v : 1, r : 2;
+#else
         uint8_t r : 2, v : 1, h : 1, cmd : 4;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct CommandStepBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cmd : 3, u : 1, h : 1, v : 1, r : 2;
+#else
         uint8_t r : 2, v : 1, h : 1, u : 1, cmd : 3;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct CommandTypeIIBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cmd : 3, m : 1, h : 1, e : 1, p : 1, a0 : 1;
+#else
         uint8_t a0 : 1, p : 1, e : 1, h : 1, m : 1, cmd : 3;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct CommandTypeIIIBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cmd : 4, h : 1, e : 1, p : 1, _ : 1;
+#else
         uint8_t _ : 1, p : 1, e : 1, h : 1, cmd : 4;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct CommandTypeIVBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cmd : 4, immediate : 1, index : 1, _ : 2;
+#else
         uint8_t _ : 2, index : 1, immediate : 1, cmd : 4;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -133,7 +158,11 @@ struct WD1770 {
 
 #include <shared/pushwarn_bitfields.h>
     struct PinsBits {
+#if CPU_BIG_ENDIAN
+        bool intrq : 1, drq : 1;
+#else
         bool drq : 1, intrq : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -158,11 +187,8 @@ struct WD1770 {
     static uint8_t Read3(void *fdc, M6502Word addr);
 
     void SetDDEN(bool dden);
-
     void SetTrace(Trace *trace);
-
     Pins Update();
-
     void Set1772(bool is1772);
     void SetNoINTRQ(bool no_intrq);
 
@@ -170,21 +196,19 @@ struct WD1770 {
   private:
     WD1770Handler *m_handler = nullptr;
 
-    //
     bool m_no_intrq = false;
     bool m_is1772 = false;
 
-    // Registers.
-    Status m_status = {};   //read
-    Command m_command = {}; //write
-    uint8_t m_track = 0;    //read/write
-    uint8_t m_sector = 0;   //read/write
-    uint8_t m_data = 0;     //read/write
+    Status m_status = {};
+    Command m_command = {};
+    uint8_t m_track = 0;
+    uint8_t m_sector = 0;
+    uint8_t m_data = 0;
 
     bool m_dden = false;
 
     Pins m_pins = {};
-    uint8_t m_direction = 0; //step IN (todo)
+    uint8_t m_direction = 0;
     uint8_t m_restore_count = 0;
     size_t m_offset = 0;
     size_t m_sector_size = 0;
@@ -204,9 +228,6 @@ struct WD1770 {
 #endif
 
     void ResetStatusRegister();
-    //bool IsTrack0();
-    //void StepOut();
-    //void StepIn();
     int IsMotorOn();
     void SpinUp();
     void SpinDown();

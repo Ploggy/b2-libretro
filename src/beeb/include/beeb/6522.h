@@ -20,14 +20,27 @@ class TraceEventType;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. All bitfield structs below have their field order
+// reversed under CPU_BIG_ENDIAN so that named fields map to the correct
+// hardware register bit positions on both platforms.
+// Hardware bit layout: bit 0 = LSB, bit 7 = MSB of the uint8_t value.
+
 class R6522 {
   public:
 #include <shared/pushwarn_bitfields.h>
     struct PCRBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cb2_mode : 3;
+        uint8_t cb1_pos_irq : 1;
+        uint8_t ca2_mode : 3;
+        uint8_t ca1_pos_irq : 1;
+#else
         uint8_t ca1_pos_irq : 1;
         uint8_t ca2_mode : 3;
         uint8_t cb1_pos_irq : 1;
         uint8_t cb2_mode : 3;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -38,12 +51,21 @@ class R6522 {
 
 #include <shared/pushwarn_bitfields.h>
     struct ACRBits {
+#if CPU_BIG_ENDIAN
+        uint8_t t1_output_pb7 : 1;
+        uint8_t t1_continuous : 1;
+        uint8_t t2_count_pb6 : 1;
+        uint8_t sr : 3;
+        uint8_t pb_latching : 1;
+        uint8_t pa_latching : 1;
+#else
         uint8_t pa_latching : 1;
         uint8_t pb_latching : 1;
         uint8_t sr : 3;
         uint8_t t2_count_pb6 : 1;
         uint8_t t1_continuous : 1;
         uint8_t t1_output_pb7 : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -55,6 +77,16 @@ class R6522 {
 
 #include <shared/pushwarn_bitfields.h>
     struct IRQBits {
+#if CPU_BIG_ENDIAN
+        uint8_t _ : 1;
+        uint8_t t1 : 1;
+        uint8_t t2 : 1;
+        uint8_t cb1 : 1;
+        uint8_t cb2 : 1;
+        uint8_t sr : 1;
+        uint8_t ca1 : 1;
+        uint8_t ca2 : 1;
+#else
         uint8_t ca2 : 1;
         uint8_t ca1 : 1;
         uint8_t sr : 1;
@@ -63,6 +95,7 @@ class R6522 {
         uint8_t t2 : 1;
         uint8_t t1 : 1;
         uint8_t _ : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -97,28 +130,21 @@ class R6522 {
 #include <shared/pushwarn_bitfields.h>
     struct Port {
       private:
-        /* ORx */
-        /* (`or' conflicts with iso646) */
         uint8_t or_ = 0;
-
-        /* DDRx */
         uint8_t ddr = 0;
 
-        /* Px */
       public:
         uint8_t p = 0xff;
 
       private:
         uint8_t p_latch = 0xff;
 
-        /* Cx1 */
       public:
         uint8_t c1 = 0;
 
       private:
         uint8_t old_c1 = 0;
 
-        /* Cx2 */
       public:
         uint8_t c2 = 0;
 
@@ -140,8 +166,6 @@ class R6522 {
 
     void Reset();
 
-    // NAME is copied by pointer and should be a string literal.
-    // ID is a 4-bit quantity.
     void SetID(uint8_t id, const char *name);
 
     static void Write0(void *via, M6502Word addr, uint8_t value);
@@ -178,10 +202,8 @@ class R6522 {
     static uint8_t ReadE(void *via, M6502Word addr);
     static uint8_t ReadF(void *via, M6502Word addr);
 
-    // Get current PCR value, no side-effects.
     PCR GetPCR() const;
 
-    // Return non-0 to indicate IRQ.
     uint8_t UpdatePhi2LeadingEdge();
     uint8_t UpdatePhi2TrailingEdge();
 
@@ -190,11 +212,6 @@ class R6522 {
 #endif
   protected:
   private:
-    /* uint8_t pa; */
-    /* uint8_t pa_latch; */
-    /* uint8_t pb,old_pb; */
-    /* uint8_t pb_latch; */
-
     uint8_t m_t1ll = 250;
     uint8_t m_t1lh = 202;
     uint8_t m_t2ll = 0;
@@ -214,10 +231,7 @@ class R6522 {
     bool m_t2_timeout = false;
     bool m_t2_count = true;
 
-    /* T1-driven output value for PB7 */
     uint8_t m_t1_pb7 = 0;
-
-    /* old value of port B, for use when counting PB6 pulses. */
     uint8_t m_old_pb = 0;
 
 #if BBCMICRO_TRACE

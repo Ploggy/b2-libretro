@@ -41,11 +41,24 @@
 // |       x       |      red      |     green     |      blue     |
 // +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
 // </pre>
+//
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first, which is the reverse of little-endian x86. The field
+// order is therefore reversed under CPU_BIG_ENDIAN so that each named field
+// maps to the same bits[15:0] position on both platforms, keeping all
+// existing .bits.x / .bits.r / .bits.g / .bits.b accesses correct.
 struct VideoDataPixelBits {
-    uint16_t b : 4;
-    uint16_t g : 4;
-    uint16_t r : 4;
-    uint16_t x : 4;
+#if CPU_BIG_ENDIAN
+    uint16_t x : 4; // bits[15:12]
+    uint16_t r : 4; // bits[11:8]
+    uint16_t g : 4; // bits[7:4]
+    uint16_t b : 4; // bits[3:0]
+#else
+    uint16_t b : 4; // bits[3:0]
+    uint16_t g : 4; // bits[7:4]
+    uint16_t r : 4; // bits[11:8]
+    uint16_t x : 4; // bits[15:12]
+#endif
 };
 
 union VideoDataPixel {

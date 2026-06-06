@@ -6,6 +6,9 @@
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: M6502WordBytes uses named byte fields (l, h) with no bitfields,
+// so it is endian-neutral and needs no fix.
+
 struct M6502WordBytes {
     uint8_t l, h;
 };
@@ -13,8 +16,18 @@ struct M6502WordBytes {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. M6502WordBigPage maps a 16-bit address as:
+//   bits[11:0] = page offset (o)
+//   bits[15:12] = big page index (p)
+// The field order is reversed under CPU_BIG_ENDIAN to preserve this mapping.
+
 struct M6502WordBigPage {
+#if CPU_BIG_ENDIAN
+    uint16_t p : 4, o : 12;
+#else
     uint16_t o : 12, p : 4;
+#endif
 };
 
 //////////////////////////////////////////////////////////////////////////

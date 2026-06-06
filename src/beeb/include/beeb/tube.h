@@ -20,10 +20,22 @@ class TraceEventType;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. All bitfield structs below have their field order
+// reversed under CPU_BIG_ENDIAN so that named fields map to the correct
+// hardware register bit positions on both platforms.
+// Hardware bit layout: bit 0 = LSB, bit 7 = MSB of the uint8_t value.
+
 struct TubeFIFOStatusBits {
+#if CPU_BIG_ENDIAN
+    uint8_t available : 1;
+    uint8_t not_full : 1;
+    uint8_t _ : 6;
+#else
     uint8_t _ : 6;
     uint8_t not_full : 1;
     uint8_t available : 1;
+#endif
 };
 
 union TubeFIFOStatus {
@@ -33,6 +45,16 @@ union TubeFIFOStatus {
 static_assert(sizeof(TubeFIFOStatus) == 1, "");
 
 struct TubeStatusBits {
+#if CPU_BIG_ENDIAN
+    uint8_t s : 1; //set/reset flag(s) indicated by mask
+    uint8_t t : 1; //clear all Tube registers
+    uint8_t p : 1; //activate PRST
+    uint8_t v : 1; //2-byte operation of register 3
+    uint8_t m : 1; //enable PNMI from register 3
+    uint8_t j : 1; //enable PIRQ from register 4
+    uint8_t i : 1; //enable PIRQ from register 4
+    uint8_t q : 1; //enable HIRQ from register 4
+#else
     uint8_t q : 1; //enable HIRQ from register 4
     uint8_t i : 1; //enable PIRQ from register 4
     uint8_t j : 1; //enable PIRQ from register 4
@@ -41,6 +63,7 @@ struct TubeStatusBits {
     uint8_t p : 1; //activate PRST
     uint8_t t : 1; //clear all Tube registers
     uint8_t s : 1; //set/reset flag(s) indicated by mask
+#endif
 };
 
 union TubeStatus {
@@ -59,8 +82,13 @@ union TubeHostIRQ {
 };
 
 struct TubeParasiteIRQBits {
+#if CPU_BIG_ENDIAN
+    uint8_t pnmi : 1;
+    uint8_t pirq : 1;
+#else
     uint8_t pirq : 1;
     uint8_t pnmi : 1;
+#endif
 };
 
 union TubeParasiteIRQ {

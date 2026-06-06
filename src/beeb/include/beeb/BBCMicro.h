@@ -27,6 +27,7 @@ class BeebLink;
 #include <shared/enum_decl.h>
 #include "BBCMicro.inl"
 #include <shared/enum_end.h>
+#include <cstring>
 
 //
 #define BBCMICRO_NUM_UPDATE_GROUPS (4)
@@ -58,6 +59,7 @@ class BBCMicro : private WD1770Handler {
     static constexpr size_t NUM_UPDATE_MFNS = 65536;
 
     static std::string GetUpdateFlagExpr(const uint32_t flags_);
+    static void EnsureUpdateMFnsTableIsReady();
 
 #if BBCMICRO_DEBUGGER
 
@@ -307,9 +309,7 @@ class BBCMicro : private WD1770Handler {
 #endif
 
     // Result is a combination of BBCMicroUpdateResultFlag values.
-    uint32_t Update(VideoDataUnit *video_unit, SoundDataUnit *sound_unit) {
-        return (this->*m_update_mfn)(video_unit, sound_unit);
-    }
+    uint32_t Update(VideoDataUnit *video_unit, SoundDataUnit *sound_unit);
 
     // Update stats and debug stuff that need updating only at low frequency
     // (100 Hz, say...) - if even at all.
@@ -727,8 +727,6 @@ class BBCMicro : private WD1770Handler {
 #endif
 
     static_assert(NUM_UPDATE_MFNS % BBCMICRO_NUM_UPDATE_GROUPS == 0);
-
-    static void EnsureUpdateMFnsTableIsReady();
 
 #if BBCMICRO_NUM_UPDATE_GROUPS == 1
     static const UpdateMFn ms_update_mfns[NUM_UPDATE_MFNS];

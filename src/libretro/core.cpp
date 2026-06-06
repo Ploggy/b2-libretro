@@ -281,7 +281,9 @@ static void create_core(BBCMicro** newcore)
     }
     log_cb(RETRO_LOG_DEBUG, "Creating new core, type: %s\n",machine_types[model_index].name);
 
-    *newcore = new BBCMicro(
+    BBCMicro::EnsureUpdateMFnsTableIsReady();
+	
+	*newcore = new BBCMicro(
       CreateBBCMicroType(machine_types[model_index].type,DEFAULT_ROM_TYPES),
       machine_types[model_index].disc_interface,
       machine_types[model_index].parasite_type,
@@ -644,21 +646,9 @@ void retro_init(void)
     log_cb(RETRO_LOG_ERROR, "XRGB8888 is not supported.\n");
   }
 
-  check_variables();
-  log_cb(RETRO_LOG_DEBUG, "Creating core...\n");
-  //core = new BBCMicro(&BBC_MICRO_TYPE_B,&DISC_INTERFACE_ACORN_1770,BBCMicroParasiteType_None,{},nullptr,0,nullptr,{0});
-  //core = new BBCMicro(&BBC_MICRO_TYPE_B,nullptr,BBCMicroParasiteType_None,{},nullptr,0,nullptr,{0});
   create_core(&core);
-
-//  tv = TVOutput();
-
+  //  tv = TVOutput();
   check_variables();
-  log_cb(RETRO_LOG_DEBUG, "Starting core...\n");
-  core->Update(&vdu,&sdu);
-  updateCount++;
-
-/* 
-  core->change_resolution(core->currWidth,core->currHeight,environ_cb);*/
 }
 
 void retro_deinit(void)
@@ -1190,7 +1180,6 @@ bool header_match(const char* buf1, const unsigned char* buf2, size_t length)
 
 bool retro_load_game(const struct retro_game_info *info)
 {
-  printf("retro_load_game \n");
 
   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
   if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
@@ -1236,7 +1225,6 @@ void retro_unload_game(void)
 
 bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num)
 {
-  printf("retro_load_game_special \n");
   if (type != 0x200)
     return false;
   if (num != 2)
@@ -1324,8 +1312,6 @@ unsigned retro_api_version(void)
 
 void retro_set_controller_port_device(unsigned port, unsigned device)
 {
-  printf("retro_set_controller_port_device \n");
-
   //log_cb(RETRO_LOG_INFO, "Plugging device %u into port %u.\n", device, port);
 /*  std::map< unsigned, std::string>::const_iterator  iter_joytype;
   iter_joytype = Ep128Emu::joystick_type_retrodev.find(device);

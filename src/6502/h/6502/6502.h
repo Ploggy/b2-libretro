@@ -18,9 +18,15 @@ struct M6502;
 /* This struct never aliases anything in 6502 memory - it needs to be
  * the right way round for the host system. (It should probably be
  * called M6502HostWord, or something...) */
+#if CPU_BIG_ENDIAN
+struct M6502WordBytes {
+    uint8_t h, l;
+};
+#else
 struct M6502WordBytes {
     uint8_t l, h;
 };
+#endif
 
 union M6502Word {
     uint16_t w;
@@ -37,6 +43,18 @@ typedef union M6502Word M6502Word;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
+#if CPU_BIG_ENDIAN
+struct M6502PBitsInternal {
+    uint8_t n : 1;
+    uint8_t v : 1;
+    uint8_t _5 : 1; //always reads as 1
+    uint8_t _4 : 1; //driven by d1x1
+    uint8_t d : 1;
+    uint8_t i : 1;
+    uint8_t z : 1;
+    uint8_t c : 1;
+};
+#else
 struct M6502PBitsInternal {
     uint8_t c : 1;
     uint8_t z : 1;
@@ -47,6 +65,7 @@ struct M6502PBitsInternal {
     uint8_t v : 1;
     uint8_t n : 1;
 };
+#endif
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -66,10 +85,17 @@ extern const char M6502_check_size[sizeof(M6502PInternal) == 1 ? 1 : -1];
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
+#if CPU_BIG_ENDIAN
+struct M6502PBits {
+    uint8_t n : 1, v : 1, _ : 1, b : 1;
+    uint8_t d : 1, i : 1, z : 1, c : 1;
+};
+#else
 struct M6502PBits {
     uint8_t c : 1, z : 1, i : 1, d : 1;
     uint8_t b : 1, _ : 1, v : 1, n : 1;
 };
+#endif
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -166,6 +192,18 @@ struct M6502DisassemblyInfo {
     // Count includes the instruction.
     uint8_t num_bytes;
 
+#if CPU_BIG_ENDIAN
+    // Condition for branch - 0=not a branch, otherwise one of the
+    // M6502Condition values.
+    uint8_t branch_condition : 5;
+
+    // Set if the debugger should actually do a step in when stepping
+    // over this instruction.
+    uint8_t always_step_in : 1;
+
+    // Set if undocumented.
+    uint8_t undocumented : 1;
+#else
     // Set if undocumented.
     uint8_t undocumented : 1;
 
@@ -176,6 +214,7 @@ struct M6502DisassemblyInfo {
     // Condition for branch - 0=not a branch, otherwise one of the
     // M6502Condition values.
     uint8_t branch_condition : 5;
+#endif
 
     // Mnemonic.
     char mnemonic[5];
@@ -349,10 +388,16 @@ struct M6502 {
     uint8_t opcode;     /* (internal) last opcode fetched */
     uint8_t data;       /* (internal) misc - usually operand
                                  * for current instruction */
+#if CPU_BIG_ENDIAN
+    uint8_t d1x1 : 1;   /* (internal) D1x1, active low */
+    uint8_t acarry : 1; /* (internal) address calculation
+                                 * carry flag */
+#else
     uint8_t acarry : 1; /* (internal) address calculation
                                  * carry flag */
                         /*  */
     uint8_t d1x1 : 1;   /* (internal) D1x1, active low */
+#endif
 
     // (57-58)
 

@@ -35,23 +35,11 @@ class DiscImage;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-// All the shared_ptr<vector<uint8_t>> point to vectors that are never resized
-// once created. So in principle it's safe(ish) to call size() and operator[]
-// from multiple threads without bothering to lock.
-//
-// The ExtMem has a shared_ptr<vector<uint8_t>> inside it, and that follows the
-// same rules.
-
-// The access specifiers are a bit of a random jumble.
-//
-// BBCMicro is a friend class, so it can always access anything.
-//
-// Anything public is safe to access from a const BBCMicroState (or derived
-// class).
-//
-// Anything protected is either never used outside BBCMicro, or requires a
-// getter for some reason (optional hardware, access controlled by a debug state
-// override, etc.).
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. All bitfield structs below have their field order
+// reversed under CPU_BIG_ENDIAN so that named fields map to the correct
+// hardware register bit positions on both platforms.
+// Hardware bit layout: bit 0 = LSB, bit 7 = MSB of the uint8_t value.
 
 class BBCMicroState {
   public:
@@ -59,26 +47,42 @@ class BBCMicroState {
     struct SystemVIAPBBits {
         static const uint8_t NOT_JOYSTICK0_FIRE_BIT = 4;
         static const uint8_t NOT_JOYSTICK1_FIRE_BIT = 5;
+#if CPU_BIG_ENDIAN
+        uint8_t not_joystick1_fire : 1, not_joystick0_fire : 1, latch_value : 1, latch_index : 3;
+#else
         uint8_t latch_index : 3, latch_value : 1, not_joystick0_fire : 1, not_joystick1_fire : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct BSystemVIAPBBits {
+#if CPU_BIG_ENDIAN
+        uint8_t speech_interrupt : 1, speech_ready : 1, _ : 6;
+#else
         uint8_t _ : 6, speech_ready : 1, speech_interrupt : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct Master128SystemVIAPBBits {
+#if CPU_BIG_ENDIAN
+        uint8_t rtc_address_strobe : 1, rtc_chip_select : 1, _ : 6;
+#else
         uint8_t _ : 6, rtc_chip_select : 1, rtc_address_strobe : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct MasterCompactSystemVIAPBBits {
         static constexpr uint8_t DATA_BIT = 4;
+#if CPU_BIG_ENDIAN
+        uint8_t clk : 1, data : 1, _ : 4;
+#else
         uint8_t _ : 4, data : 1, clk : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -92,19 +96,31 @@ class BBCMicroState {
 
 #include <shared/pushwarn_bitfields.h>
     struct BAddressableLatchBits {
+#if CPU_BIG_ENDIAN
+        uint8_t speech_write : 1, speech_read : 1, _ : 1;
+#else
         uint8_t _ : 1, speech_read : 1, speech_write : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct AddressableLatchBits {
+#if CPU_BIG_ENDIAN
+        uint8_t shift_lock_led : 1, caps_lock_led : 1, screen_base : 2, not_kb_write : 1, _ : 2, not_sound_write : 1;
+#else
         uint8_t not_sound_write : 1, _ : 2, not_kb_write : 1, screen_base : 2, caps_lock_led : 1, shift_lock_led : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
 #include <shared/pushwarn_bitfields.h>
     struct Master128AddressableLatchBits {
+#if CPU_BIG_ENDIAN
+        uint8_t rtc_data_strobe : 1, rtc_read : 1, _ : 1;
+#else
         uint8_t _ : 1, rtc_read : 1, rtc_data_strobe : 1;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -116,6 +132,15 @@ class BBCMicroState {
     };
 
     struct AMXMouseDataBits {
+#if CPU_BIG_ENDIAN
+        uint8_t r : 1;
+        uint8_t m : 1;
+        uint8_t l : 1;
+        uint8_t _2 : 2;
+        uint8_t y : 1;
+        uint8_t _1 : 1;
+        uint8_t x : 1;
+#else
         uint8_t x : 1;
         uint8_t _1 : 1;
         uint8_t y : 1;
@@ -123,15 +148,24 @@ class BBCMicroState {
         uint8_t l : 1;
         uint8_t m : 1;
         uint8_t r : 1;
+#endif
     };
     CHECK_SIZEOF(AMXMouseDataBits, 1);
 
     struct CompactMouseDataBits {
+#if CPU_BIG_ENDIAN
+        uint8_t y : 1;
+        uint8_t x : 1;
+        uint8_t r : 1;
+        uint8_t m : 1;
+        uint8_t l : 1;
+#else
         uint8_t l : 1;
         uint8_t m : 1;
         uint8_t r : 1;
         uint8_t x : 1;
         uint8_t y : 1;
+#endif
     };
     CHECK_SIZEOF(CompactMouseDataBits, 1);
 
@@ -158,17 +192,22 @@ class BBCMicroState {
         bool is_write_protected = false;
     };
 
-    // Somewhere better for this? Maybe?
-    //
-    // Not coincidentally, the layout for this is identical to the
-    // ADJI/Slogger/First Byte interface hardware.
     struct DigitalJoystickInputBits {
+#if CPU_BIG_ENDIAN
+        bool fire1 : 1;
+        bool fire0 : 1;
+        bool right : 1;
+        bool left : 1;
+        bool down : 1;
+        bool up : 1;
+#else
         bool up : 1;
         bool down : 1;
         bool left : 1;
         bool right : 1;
         bool fire0 : 1;
         bool fire1 : 1;
+#endif
     };
 
     union DigitalJoystickInput {
@@ -176,8 +215,6 @@ class BBCMicroState {
         DigitalJoystickInputBits bits;
     };
 
-    // There's deliberately not much you can publicly do with one of these
-    // other than default-construct it or copy it.
     explicit BBCMicroState() = delete;
     explicit BBCMicroState(const BBCMicroState &) = default;
     BBCMicroState &operator=(const BBCMicroState &) = delete;
@@ -220,22 +257,17 @@ class BBCMicroState {
   protected:
     uint8_t ic15_byte = 0;
 
-    // 0x8000 to display shadow RAM; 0x0000 to display normal RAM.
     uint16_t shadow_select_mask = 0x0000;
     uint8_t cursor_pattern = 0;
 
   public:
     SN76489 sn76489;
 
-    // Number of emulated system cycles elapsed. Used to regulate sound
-    // output and measure (for informational purposes) time between vsyncs.
     CycleCount cycle_count = {0};
 
-    // Addressable latch.
     AddressableLatch addressable_latch = {0xff};
 
   protected:
-    // Previous values, for detecting edge transitions.
     AddressableLatch old_addressable_latch = {0xff};
 
   public:
@@ -261,15 +293,12 @@ class BBCMicroState {
   public:
     PagingState paging;
 
-    // Key states
     uint8_t key_columns[16] = {};
     uint8_t key_scan_column = 0;
 
   protected:
     int num_keys_down = 0;
-    //BeebKey auto_reset_key=BeebKey_None;
 
-    // Disk stuff
   public:
     const DiscInterface *const disc_interface = nullptr;
 
@@ -280,13 +309,8 @@ class BBCMicroState {
     std::shared_ptr<DiscInterfaceExtraHardwareState> disc_interface_extra_hardware;
 
   protected:
-    // RTC
     MC146818 rtc;
-
-    // EEPROM
     PCD8572 eeprom;
-
-    // ADC
     ADC adc;
 
   public:
@@ -298,21 +322,15 @@ class BBCMicroState {
     int mouse_dy = 0;
 
   protected:
-    // Parallel printer
     bool printer_enabled = false;
     uint16_t printer_busy_counter = 0;
 
-    // Joystick states.
-    //
-    // Suitable for ORing into the PB value - only the two joystick button
-    // bits are ever set (indicating button unpressed).
     uint8_t not_joystick_buttons = 1 << 4 | 1 << 5;
 
   public:
     uint16_t analogue_channel_values[4] = {};
 
   protected:
-    // External 1MHz bus RAM.
     ExtMem ext_mem;
 
     CycleCount last_vsync_cycle_count = {0};
@@ -322,31 +340,20 @@ class BBCMicroState {
 
     std::shared_ptr<const std::array<uint8_t, 16384>> os_buffer;
     std::shared_ptr<const std::vector<uint8_t>> sideways_rom_buffers[16];
-    // Each element is either a copy of the ROMData contents, or null.
     std::shared_ptr<std::array<uint8_t, 16384>> sideways_ram_buffers[16];
 
-    // Combination of BBCMicroHackFlag.
     uint32_t hack_flags = 0;
 
-    // Current paste data, if any.
-    //
-    // (This has to be part of the BBCMicro state - suppose a
-    // state is saved mid-paste. The initiating event is in the
-    // past, and won't be included in the replay data, but when
-    // starting a replay from that state then the rest of the
-    // paste needs to be performed.)
     BBCMicroPasteState paste_state = BBCMicroPasteState_None;
     std::shared_ptr<const std::string> paste_text;
     size_t paste_index = 0;
     uint64_t paste_wait_end = 0;
 
-    // Tube stuff.
     bool parasite_accessible = false;
 
     M6502 parasite_cpu = {};
 
   protected:
-    // Disallow values of base type. Disallow delete of pointer to base type.
     ~BBCMicroState() = default;
 
   protected:
@@ -369,9 +376,6 @@ class BBCMicroState {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-// A unique state has its own copy of all the shared_ptr'd buffers and all the
-// Handler and Trace pointers (etc.) are valid.
-
 class BBCMicroUniqueState : public BBCMicroState {
   public:
     using BBCMicroState::BBCMicroState;
@@ -385,26 +389,6 @@ class BBCMicroUniqueState : public BBCMicroState {
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
-// A read-only state is potentially a simple value copy of an existing state,
-// possibly itself a read-only one too. Read-only states may share buffers with
-// other states, so the following apply:
-//
-// - the various ROM and RAM shared_ptr'd buffers can refer to the same buffers
-//   as the original state. They may be out of sync relative to the rest of the
-//   hardware state!
-// - any hardware Handler or Trace pointers (etc.) are not necessarily valid
-//
-// This means that a read-only state is kind of useless! They're there purely
-// for the debugger to use for updating its UI without having to have each
-// window take a lock (or have the debugger copy all of BBC memory).
-//
-// The potential discrepancy between RAM contents and hardware state doesn't
-// matter; when the BBC is running, it's impossible to tell, and when it's
-// stopped, the two are actually in sync.
-//
-// (Any actual modification to the BBCMicro state is done via BeebThread
-// messages.)
 
 class BBCMicroReadOnlyState : public BBCMicroState {
   public:

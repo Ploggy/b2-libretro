@@ -2905,13 +2905,11 @@ void BBCMicro::UpdateCPUDataBusFn() {
 #endif
 
     update_flags |= (uint32_t)m_state.paging.rom_types[m_state.paging.romsel.b_bits.pr] << BBCMicroUpdateFlag_ROMTypeShift;
-
     ASSERT(update_flags < sizeof ms_update_mfns / sizeof ms_update_mfns[0]);
     m_update_flags = update_flags;
     m_update_mfn = ms_update_mfns[update_flags];
     ASSERT(m_update_mfn);
 }
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
@@ -3057,6 +3055,16 @@ void BBCMicro::EnsureUpdateMFnsTableIsReady() {
         ASSERT(ms_update_mfns[i]);
     }
 }
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
+uint32_t BBCMicro::Update(VideoDataUnit *video_unit, SoundDataUnit *sound_unit) {
+    m_update_flags = (uint32_t)((char*)&m_update_mfn - (char*)this);
+    if (!m_update_mfn) {
+        EnsureUpdateMFnsTableIsReady();
+        UpdateCPUDataBusFn();
+    }
+    return (this->*m_update_mfn)(video_unit, sound_unit);
+}
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

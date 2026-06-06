@@ -233,10 +233,10 @@ else ifeq ($(platform), wiiu)
        CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
        CXX = $(DEVKITPPC)/bin/powerpc-eabi-g++$(EXE_EXT)
        AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
-       CFLAGS += -DGEKKO -DWIIU -DHW_RVL -mcpu=750 -meabi -mhard-float -DCPU_BIG_ENDIAN=1
+       CFLAGS += -DGEKKO -DWIIU -DHW_WUP -mcpu=750 -meabi -DMSB_FIRST -mhard-float -DCPU_BIG_ENDIAN=1
        CFLAGS += -ffunction-sections -fdata-sections -D__wiiu__ -D__wut__ -D__PPC
-       CXXFLAGS += -DGEKKO -DWIIU -DHW_RVL -mcpu=750 -meabi -mhard-float -DCPU_BIG_ENDIAN=1
-	   CXXFLAGS += -ffunction-sections -fdata-sections -D__wiiu__ -D__wut__ -D__PPC
+       CXXFLAGS += -DGEKKO -DWIIU -DHW_WUP -mcpu=750 -meabi -DMSB_FIRST -mhard-float -DCPU_BIG_ENDIAN=1
+	   CXXFLAGS += -ffunction-sections -fdata-sections -D__wiiu__ -D__wut__ -D__PPC -D__BIG_ENDIAN__
        LDFLAGS += -latomic -lEGL -lGLESv2
        STATIC_LINKING = 1
 

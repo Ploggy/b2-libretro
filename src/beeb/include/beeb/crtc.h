@@ -16,26 +16,34 @@ class Trace;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. All bitfield structs below have their field order
+// reversed under CPU_BIG_ENDIAN so that named fields map to the correct
+// hardware register bit positions on both platforms.
+//
+// The CRTC Output struct uses uint32_t bitfields. The same reversal rule
+// applies: on BE, the first declared field occupies the MSBs.
+//
+// Hardware bit layout for 8-bit registers: bit 0 = LSB, bit 7 = MSB.
+
 class CRTC {
   public:
     struct Output {
-        // Value of hsync output.
-        uint32_t hsync : 1;
-
-        // Value of vsync output.
-        uint32_t vsync : 1;
-
-        // If display, fetch from ADDRESS/RASTER and use as display data.
-        uint32_t display : 1;
-
-        // Value of cudisp output.
-        uint32_t cudisp : 1;
-
-        // 6845 address to fetch from, if DISPLAY set.
-        uint32_t address : 14;
-
-        // Current character row, if DISPLAY set.
+#if CPU_BIG_ENDIAN
         uint32_t raster : 5;
+        uint32_t address : 14;
+        uint32_t cudisp : 1;
+        uint32_t display : 1;
+        uint32_t vsync : 1;
+        uint32_t hsync : 1;
+#else
+        uint32_t hsync : 1;
+        uint32_t vsync : 1;
+        uint32_t display : 1;
+        uint32_t cudisp : 1;
+        uint32_t address : 14;
+        uint32_t raster : 5;
+#endif
     };
 
     static uint8_t ReadAddress(void *c_, M6502Word a);
@@ -54,29 +62,36 @@ class CRTC {
   private:
 #include <shared/pushwarn_bitfields.h>
     struct R3Bits {
+#if CPU_BIG_ENDIAN
+        uint8_t wv : 4;
+        uint8_t wh : 4;
+#else
         uint8_t wh : 4;
         uint8_t wv : 4;
+#endif
     };
 #include <shared/popwarn.h>
-
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
 
     union R3 {
         uint8_t value;
         struct R3Bits bits;
     };
 
-    //////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////
-
 #include <shared/pushwarn_bitfields.h>
     struct R8Bits {
+#if CPU_BIG_ENDIAN
+        uint8_t c : 2;
+        uint8_t d : 2;
+        uint8_t _ : 2;
+        uint8_t v : 1;
+        uint8_t s : 1;
+#else
         uint8_t s : 1;
         uint8_t v : 1;
         uint8_t _ : 2;
         uint8_t d : 2;
         uint8_t c : 2;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -87,8 +102,13 @@ class CRTC {
 
 #include <shared/pushwarn_bitfields.h>
     struct R10Bits {
+#if CPU_BIG_ENDIAN
+        uint8_t mode : 2;
         uint8_t start : 5;
-        uint8_t mode : 2; //(CRTCCursorMode)
+#else
+        uint8_t start : 5;
+        uint8_t mode : 2;
+#endif
     };
 #include <shared/popwarn.h>
 
@@ -99,21 +119,21 @@ class CRTC {
     typedef union CRTCR10 CRTCR10;
 
     struct RegisterBits {
-        uint8_t nht;              //R0 - horizontal total
-        uint8_t nhd;              //R1 - horizontal displayed
-        uint8_t nhsp;             //R2 - horizontal sync position
-        R3 nsw;                   //R3 - sync width
-        uint8_t nvt;              //R4 - vertical total
-        uint8_t nadj;             //R5 - vertical total adjust
-        uint8_t nvd;              //R6 - vertical displayed
-        uint8_t nvsp;             //R7 - vertical sync position
-        R8 r8;                    //R8 - interlace and skew
-        uint8_t nr;               //R9 - maximum raster address
-        R10 ncstart;              //R10 - cursor start raster
-        uint8_t ncend;            //R11 - cursor end raster
-        uint8_t addrh, addrl;     //R12,R13 - start address
-        uint8_t cursorh, cursorl; //R14,R15 - cursor address
-        uint8_t penh, penl;       //R16,R17 - light pen address
+        uint8_t nht;
+        uint8_t nhd;
+        uint8_t nhsp;
+        R3 nsw;
+        uint8_t nvt;
+        uint8_t nadj;
+        uint8_t nvd;
+        uint8_t nvsp;
+        R8 r8;
+        uint8_t nr;
+        R10 ncstart;
+        uint8_t ncend;
+        uint8_t addrh, addrl;
+        uint8_t cursorh, cursorl;
+        uint8_t penh, penl;
     };
 
     union Registers {
@@ -122,13 +142,12 @@ class CRTC {
     };
 
     struct InternalState {
-        uint8_t column = 0;        //character column
-        uint8_t row = 0;           //character row
-        uint8_t raster = 0;        //scanline in character
-        int8_t vsync_counter = -1; //vsync counter
-        int8_t hsync_counter = -1; //hsync counter
+        uint8_t column = 0;
+        uint8_t row = 0;
+        uint8_t raster = 0;
+        int8_t vsync_counter = -1;
+        int8_t hsync_counter = -1;
         int8_t vadj_counter = -1;
-        //    //bool adj=false;//set if in the adjustment period
         bool hdisp = true;
         bool vdisp = true;
         M6502Word line_addr = {};
@@ -154,11 +173,7 @@ class CRTC {
     uint8_t m_address = 0;
     InternalState m_st;
 
-    // incremented on each field - used for even/odd and cursor blink
-    // timing, so wraparound is no problem
     uint8_t m_num_frames = 0;
-
-    //    int m_interlace_delay_counter=-1;
 
 #if BBCMICRO_TRACE
     Trace *m_trace = nullptr;

@@ -68,12 +68,6 @@ static constexpr BigPageIndex::Type NUM_PARASITE_BIG_PAGES = {64 / 4};
 static constexpr BigPageIndex PARASITE_ROM_BIG_PAGE_INDEX = {PARASITE_BIG_PAGE_INDEX.i + NUM_PARASITE_BIG_PAGES};
 static constexpr BigPageIndex::Type NUM_PARASITE_ROM_BIG_PAGES = {1};
 
-//static constexpr uint8_t SECOND_PARASITE_BIG_PAGE_INDEX = {PARASITE_ROM_BIG_PAGE_INDEX.i + NUM_PARASITE_ROM_BIG_PAGES.i};
-//static constexpr uint8_t NUM_SECOND_PARASITE_BIG_PAGES = {64 / 4};
-//
-//static constexpr uint8_t SECOND_PARASITE_ROM_BIG_PAGE_INDEX = {SECOND_PARASITE_BIG_PAGE_INDEX.i + NUM_SECOND_PARASITE_BIG_PAGES.i};
-//static constexpr uint8_t NUM_SECOND_PARASITE_ROM_BIG_PAGES = {1};
-
 static constexpr BigPageIndex::Type NUM_BIG_PAGES = MOS_BIG_PAGE_INDEX.i + NUM_MOS_BIG_PAGES + NUM_PARASITE_BIG_PAGES + NUM_PARASITE_ROM_BIG_PAGES;
 
 // A few big page indexes from NUM_BIG_PAGES onwards will never be valid, so
@@ -85,16 +79,38 @@ static constexpr BigPageIndex INVALID_BIG_PAGE_INDEX = {(BigPageIndex::Type) ~(B
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first, which is the reverse of little-endian x86. The field
+// order in all bitfield structs below is therefore reversed under CPU_BIG_ENDIAN
+// so that each named field maps to the correct bit position on both platforms.
+//
+// The hardware register bit layout (as seen in the BBC Micro hardware manual)
+// is preserved: bit 0 is the LSB of the uint8_t value, bit 7 is the MSB.
+// On LE: first declared field = LSB. On BE: last declared field = LSB.
+// Reversing the declaration order restores the correct mapping.
+
 struct BROMSELBits {
+#if CPU_BIG_ENDIAN
+    uint8_t _ : 4, pr : 4;
+#else
     uint8_t pr : 4, _ : 4;
+#endif
 };
 
 struct BPlusROMSELBits {
+#if CPU_BIG_ENDIAN
+    uint8_t ram : 1, _ : 3, pr : 4;
+#else
     uint8_t pr : 4, _ : 3, ram : 1;
+#endif
 };
 
 struct Master128ROMSELBits {
+#if CPU_BIG_ENDIAN
+    uint8_t ram : 1, _ : 3, pm : 4;
+#else
     uint8_t pm : 4, _ : 3, ram : 1;
+#endif
 };
 
 union ROMSEL {
@@ -108,11 +124,19 @@ union ROMSEL {
 //////////////////////////////////////////////////////////////////////////
 
 struct BPlusACCCONBits {
+#if CPU_BIG_ENDIAN
+    uint8_t shadow : 1, _ : 7;
+#else
     uint8_t _ : 7, shadow : 1;
+#endif
 };
 
 struct Master128ACCCONBits {
+#if CPU_BIG_ENDIAN
+    uint8_t irr : 1, tst : 1, ifj : 1, itu : 1, y : 1, x : 1, e : 1, d : 1;
+#else
     uint8_t d : 1, e : 1, x : 1, y : 1, itu : 1, ifj : 1, tst : 1, irr : 1;
+#endif
 };
 
 union ACCCON {

@@ -18,21 +18,46 @@ class Trace;
 // the WriteNuLAXXX mmio functions aren't mapped in, it's impossible
 // to tell the difference.
 
+// NOTE: On big-endian architectures (e.g. WiiU/PPC), GCC allocates bitfields
+// from the MSB first. All bitfield structs below have their field order
+// reversed under CPU_BIG_ENDIAN so that named fields map to the correct
+// hardware register bit positions on both platforms.
+//
+// Video ULA Control Register bit layout (hardware):
+//   bit 0 = flash
+//   bit 1 = teletext
+//   bits 3:2 = line_width
+//   bit 4 = fast_6845
+//   bits 7:5 = cursor
+
 class VideoULA {
   public:
 #include <shared/pushwarn_bitfields.h>
     struct ControlBits {
+#if CPU_BIG_ENDIAN
+        uint8_t cursor : 3;
+        uint8_t fast_6845 : 1;
+        uint8_t line_width : 2;
+        uint8_t teletext : 1;
+        uint8_t flash : 1;
+#else
         uint8_t flash : 1;
         uint8_t teletext : 1;
         uint8_t line_width : 2;
         uint8_t fast_6845 : 1;
         uint8_t cursor : 3;
+#endif
     };
 #include <shared/popwarn.h>
 
     struct NuLAAttributeModeBits {
+#if CPU_BIG_ENDIAN
+        uint8_t text : 1;
+        uint8_t enabled : 1;
+#else
         uint8_t enabled : 1;
         uint8_t text : 1;
+#endif
     };
 
     union NuLAAttributeMode {
@@ -121,7 +146,6 @@ class VideoULA {
 
     typedef void (VideoULA::*EmitMFn)(VideoDataUnitPixels *);
     static const EmitMFn EMIT_MFNS[4][2][4];
-    //static const EmitMFn NULA_EMIT_MFNS[2][4];
 
 #if BBCMICRO_DEBUGGER
     friend class VideoULADebugWindow;
