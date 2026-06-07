@@ -501,15 +501,15 @@ endif
 LDFLAGS += $(LIBM)
 
 ifeq ($(DEBUG), 1)
-	CFLAGS += -O0 -g
-	CXXFLAGS += -O0 -g
+        CFLAGS += -O0 -g
+        CXXFLAGS += -O0 -g
 else
-    CFLAGS += -O3 -fno-inline-functions -fomit-frame-pointer -ffast-math
-	CXXFLAGS += -O3 -fno-inline-functions -fomit-frame-pointer -ffast-math
+        CFLAGS += -O3 -fomit-frame-pointer -ffast-math
+        CXXFLAGS += -O3 -fomit-frame-pointer -ffast-math
     LDFLAGS += -s
 endif
 
-DEFINES := -DB2_LIBRETRO_CORE -DBUILD_TYPE_Final -DBBCMICRO_TRACE $(PLATFORM_DEFINES)
+DEFINES := -DB2_LIBRETRO_CORE -DBUILD_TYPE_Final $(PLATFORM_DEFINES)
 
 CFLAGS += $(DEFINES)
 CXXFLAGS += $(DEFINES) -std=c++17

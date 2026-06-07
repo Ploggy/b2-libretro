@@ -1058,7 +1058,7 @@ void retro_run(void)
       const size_t MAX_UPDATE_SIZE = 200;
 
       tv.PrepareForUpdate();
-
+      int vsync_count = 0;
       // A.
       num_left = na;
       while (num_left > 0)
@@ -1068,14 +1068,28 @@ void retro_run(void)
          {
             n = MAX_UPDATE_SIZE;
          }
-
+         for (size_t i = 0; i < n; i++) {
+             if (a[i].pixels.pixels[1].bits.x & 1) vsync_count++;
+         }
          tv.Update(a, n);
-
+         static bool found_nonzero = false;
+         if (!found_nonzero) {
+             for (size_t i = 0; i < n; i++) {
+                 if (a[i].pixels.pixels[0].all != 0 || 
+                     a[i].pixels.pixels[2].all != 0) {
+                     log_cb(RETRO_LOG_DEBUG, "nonzero pixel at unit %zu: p0=0x%04x p1=0x%04x p2=0x%04x\n",
+                         i, a[i].pixels.pixels[0].all, 
+                         a[i].pixels.pixels[1].all,
+                         a[i].pixels.pixels[2].all);
+                     found_nonzero = true;
+                     break;
+                 }
+             }
+         }
          a += n;
          m_video_output.Consume(n);
          num_left -= n;
       }
-
       // B.
       num_left = nb;
       while (num_left > 0)
@@ -1085,12 +1099,16 @@ void retro_run(void)
          {
             n = MAX_UPDATE_SIZE;
          }
-
+         for (size_t i = 0; i < n; i++) {
+             if (b[i].pixels.pixels[1].bits.x & 1) vsync_count++;
+         }
          tv.Update(b, n);
-
          b += n;
          m_video_output.Consume(n);
          num_left -= n;
+      }
+      if (vsync_count > 0 || (frameIndex % 50 == 0)) {
+          log_cb(RETRO_LOG_DEBUG, "frame %d: na=%zu nb=%zu vsync_units=%d\n", frameIndex, na, nb, vsync_count);
       }
    }
 
@@ -1100,8 +1118,7 @@ void retro_run(void)
    if (new_version > version)
    {
       version = new_version;
-
-      //printf("Frame advance %d update count: %d\n",version, updateCount - updateCount_prevframe);
+      log_cb(RETRO_LOG_DEBUG, "New frame: version=%llu\n", (unsigned long long)new_version);
       updateCount_prevframe = updateCount;
    }
 

@@ -304,3 +304,40 @@ cd libretro
 make clean
 make -f Makefile platform=wiiu -j3
 exit
+cd /developer
+cd src
+cd libretro
+make clean
+make -f Makefile platform=wiiu -j3
+exit
+cd /developer
+cd src
+cd libretro
+make clean
+make -f Makefile platform=wiiu -j3
+exit
+cd src
+cd /developer
+cd src
+cd libretro
+make clean
+make -f Makefile platform=wiiu -j3
+exit
+cd /developer
+cd src
+cd libretro
+make clean
+make -f Makefile platform=wiiu -j3
+exit
+cd /developer
+cd src
+cd libretro
+make clean
+make -f Makefile platform=wiiu -j3
+exit
+cd /developer
+cd src
+cd libretro
+make clean
+make -f Makefile platform=wiiu -j3
+exit
